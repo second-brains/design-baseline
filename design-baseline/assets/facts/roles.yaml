@@ -1,0 +1,5 @@
+# design/facts/roles.yaml —— 角色与权限唯一权威。ID：ROLE-<数字>。
+# ROLE-003:
+#   summary: 区域经理
+#   data_scope: 仅本部门
+#   permissions: [order.read, order.export]

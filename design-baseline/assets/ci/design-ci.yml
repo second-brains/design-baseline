@@ -1,0 +1,20 @@
+name: design-baseline
+on: [push, pull_request]
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install pyyaml
+      - name: 门禁（基线哈希 / 血缘 / 覆盖 / 疑点）
+        run: python design/tools/db.py gate
+      - name: 版本对象只增不改
+        run: |
+          BASE="origin/${{ github.base_ref || 'main' }}"
+          git fetch origin "${{ github.base_ref || 'main' }}" || exit 0
+          if git diff --name-status "$BASE"...HEAD -- design/store | grep -E '^[DM]'; then
+            echo "禁止删除或修改不可变版本对象（原则 X.3/X.6）"; exit 1
+          fi

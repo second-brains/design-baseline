@@ -1,0 +1,7 @@
+# design/facts/requirements.yaml —— 需求事实唯一权威。ID：REQ-<数字>，全局唯一，永不复用。
+# 必填 summary；其余字段按需扩展。示例：
+# REQ-001:
+#   summary: 区域经理可导出本部门订单
+#   actor: ROLE-003
+#   acceptance:
+#     - 导出范围受 ROLE-003.data_scope 约束

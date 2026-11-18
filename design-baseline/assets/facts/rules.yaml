@@ -1,0 +1,5 @@
+# design/facts/rules.yaml —— 业务规则唯一权威。ID：RULE-<数字>。
+# RULE-007:
+#   summary: 单笔超额需二级审批
+#   threshold: 50000
+#   approver: ROLE-004

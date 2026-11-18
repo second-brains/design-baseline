@@ -1,0 +1,7 @@
+#!/bin/sh
+# design-baseline：基线只读 + L0/L1 + 疑点清零
+set -e
+TOP="$(git rev-parse --show-toplevel)"
+[ -f "$TOP/design/tools/db.py" ] || exit 0
+cd "$TOP"
+python3 design/tools/db.py gate

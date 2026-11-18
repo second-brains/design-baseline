@@ -1,0 +1,5 @@
+# design/facts/entities.yaml —— 实体与字段唯一权威。ID：ENT-/FIELD-<数字>。
+# FIELD-012:
+#   summary: order.status 订单状态
+#   enum: [draft, submitted, approved, closed]
+#   transitions: {draft: [submitted], submitted: [approved, draft]}

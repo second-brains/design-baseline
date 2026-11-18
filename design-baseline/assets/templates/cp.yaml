@@ -1,0 +1,17 @@
+id: __ID__
+root_cause: __ROOT_CAUSE__
+facts_changed: []          # 本次变更的事实 ID，用于按根因批量
+patches: []
+#  - path: facts/roles.yaml         # 相对 design/
+#    action: edit
+#    edits:
+#      - find: "  data_scope: 全部"
+#        replace: "  data_scope: 仅本部门"
+#  - path: docs/stories/US-021.md
+#    action: edit
+#    edits:
+#      - find: "可导出全部订单"
+#        replace: "可导出本部门订单（见 ROLE-003）"
+#  - path: docs/wireframes/SCR-09.md
+#    action: create
+#    content: design/proposals/__ID__/SCR-09.md
