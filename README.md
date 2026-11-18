@@ -1,5 +1,6 @@
 # design-baseline
 Try to solve the dilemma of constantly struggling with inconsistent document versions, repeated communication, and repeated global reviews during the system design process
+本轮范围与验收目标见 [SCOPE.md](SCOPE.md)，未来方向见 [ROADMAP.md](ROADMAP.md)。
 按"装在哪 → 谁干什么 → 完整走一遍 → 日常怎么说"四步讲。核心心法：**你只做两件事——做设计决策、批准 CP；其余全部交给 agent 和脚本。**
 
 ## 一、安装（两种形态，都可用）
@@ -80,7 +81,7 @@ python3 design/tools/db.py cp new --id CP-0001 --root-cause "初始设计基线"
 #     action: create
 #     content: design/inbox/US-001.md
 python3 design/tools/db.py cp validate --id CP-0001
-python3 design/tools/db.py cp hash --id CP-0001      # 输出 cp_hash + 批准骨架
+python3 design/tools/db.py cp hash --id CP-0001      # 输出批准骨架和 payload/source 哈希范围
 ```
 
 **Step 4：你批准（唯一不可委托的动作）**
@@ -97,11 +98,33 @@ agent 呈报变更摘要后，**由你**把骨架填完存为 `design/proposals/
 ```bash
 python3 design/tools/db.py cp apply --id CP-0001 --approval design/proposals/CP-0001.approval.json
 python3 design/tools/db.py propagate
+# 对 pending.jsonl 中每一对按 L2 规则核对并记录 verdict；不确定时保持开放
 python3 design/tools/db.py gate        # 必须为 0
 git add -A && git commit -m "CP-0001 初始设计基线"   # pre-commit 自动再跑 gate
 ```
 
 基线化后可删除 inbox 里的草稿副本（inbox 是豁免区）。
+
+批准哈希包含 CP YAML、edit 源文件、create 输入文件和实际输出字节。任一项在呈报批准后变化，apply 会拒绝；旧版仅哈希 YAML 的批准凭证不再接受。
+
+## 全局覆盖与验证
+
+`manifest.json coverage[]` 声明上游选择器、下游选择器与最小覆盖数量；规则必须匹配到实际对象，计数按不同下游对象计算。空清单、未匹配范围、未传播的新旧图以及已删除的旧关系都不能作为通过依据。
+
+需要跨对象规则时，增加显式检查。下面的样例检查器确认每项需求至少被一份 story 引用。新检查先在 observe 下运行：
+
+```bash
+python3 design/tools/db.py check add --id GLOBAL-REQ-STORY --description "每项需求至少关联一份用户故事" --command python3 design/tools/global_coverage.py --input design/tools/global_coverage.py --input design/facts --input design/docs --method e2e
+python3 design/tools/db.py verify run --check GLOBAL-REQ-STORY
+# 确认 observe 结果后升为 enforce，再执行一次以记录新模式下的证据
+python3 design/tools/db.py check enforce --id GLOBAL-REQ-STORY
+python3 design/tools/db.py verify run --check GLOBAL-REQ-STORY
+python3 design/tools/db.py gate
+```
+
+runner 使用参数数组和 `shell=False`，保存退出码及日志哈希。验证证据绑定当前所有基线版本、检查定义与模式、db.py、命令解释器、Python/平台/PyYAML/locale 环境、显式输入文件或目录以及输出日志。任一 artifact 变化都会保守地使全部验证失效；当前不做精确影响范围失效。observe 下 fail/unknown 仅报告 WARN，不会显示为通过。人工语义核对需注册 `--manual`，再用 `verify manual` 记录证据；不能用手填 pass 绕过可执行检查。
+
+runner 执行期间如检测到检查命令改写 manifest，会恢复执行前内容并持久阻断 gate。相同策略下的后续成功执行可解除，也可经人工审查后用 `check resolve --id GLOBAL-REQ-STORY --reason "..."` 记录处置。此保护覆盖检查子进程自改策略，不提供身份认证或签名；仓库写权限者仍可直接修改 manifest/ledger，需由仓库审查与 CI 分支保护治理。本轮只对已登记对象及显式检查范围负责，不承诺绝对完整。
 
 **Step 6：日常修订循环（这才是系统的常态）**
 
@@ -112,8 +135,9 @@ cp new CP-0002（根因=ROLE-003 数据范围变更）
 → edit patches：先 facts/roles.yaml，再沿追溯图找到的 US-001、SCR-001…
 → validate → hash → 呈报给你
 → 你填 approval.json（一次批准，覆盖全部受影响文件）
-→ apply → propagate（只有可达下游被标 suspect）
+→ apply → propagate（沿新旧关系传播；新增、删除和改向关系也进入疑点）
 → 对 pending.jsonl 逐对 L2 核对 → verdict 写回
+→ 有 enforce 检查时 verify run，确保当前基线证据新鲜
 → gate=0 → commit
 ```
 

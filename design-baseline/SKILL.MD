@@ -15,6 +15,7 @@ description: 文件驱动设计的基线只读与跨文档一致性管理。用�
 3. **事实单源**。跨文档共享的事实只写 `design/facts/`，叙述文档用 ID 引用，禁止复制事实内容。生成中新发现的事实进 `design/inbox/`，不得悄悄写进散文。
 4. **状态外置**。一致性结论只写 `design/trace/ledger.jsonl`；禁止改动 `design/store/`（不可变版本对象）。
 5. **不做全量语义审查**。只核对 `trace/pending.jsonl` 中的成对元素，每对一次封闭式提问。
+6. **验证证据必须新鲜**。执行型检查用 `verify run` 实际运行；基线、检查定义/模式、checker、环境、输入或日志变化都会使证据失效。未评估不是通过。
 
 
 
@@ -29,6 +30,8 @@ description: 文件驱动设计的基线只读与跨文档一致性管理。用�
 | 新建文档（草稿） | 复制 `design/templates/doc.md`，填 front-matter；草稿区自由编辑 |
 | 基线化 / 修订 | 读 `references/workflow-revise.md` → `cp new` → 填 patches → `cp validate` → `cp hash` 呈报用户 → 用户批准后 `cp apply` |
 | 一致性检查 | `db.py lint` → `graph` → `propagate`；对 `pending.jsonl` 每对按 `references/l2-pair-check.md` 核对 → `db.py verdict` |
+| 登记跨对象约束 | `db.py check add --id ... --description ... --command ... --input ...`（先 observe）→ `db.py verify run` → `check enforce` → 再 run |
+| 人工语义复核 | 显式 `check add ... --manual` → `verify manual` 记录结果与证据；不能替代可执行检查 |
 | 提交前门禁 | `db.py gate`（L0+L1+疑点清零） |
 | 查看现状 | `db.py status` |
 
@@ -38,7 +41,7 @@ description: 文件驱动设计的基线只读与跨文档一致性管理。用�
 ## 完成标准
 
 
-- 基线化门禁：`gate` 退出码 0 —— L0/L1 全绿，且每个开放疑点都有 `verdict=consistent`、有效 `waiver` 或 `omits` 声明。
+- 基线化门禁：`gate` 退出码 0 —— L0/L1 全绿，覆盖清单有匹配对象，新旧关系已传播，enforce 检查有当前版本的成功证据，且每个开放疑点都有 `verdict=consistent` 或有效 `waiver`。
 - 任一跨文档差异必须处于四态之一：`omits` / `suspect` / `CP` / `waiver`。四者之外发现差异即为流程缺陷，须报告而非静默修补。
 
 
